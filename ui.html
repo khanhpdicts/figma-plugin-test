@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 15px;
+      font-size: 12px;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #summary {
+      margin-bottom: 15px;
+    }
+
+    #list {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr {
+      cursor: pointer;
+    }
+
+    tr:hover {
+      background-color: #f0f0f0;
+    }
+
+    #error {
+      color: red;
+      margin-bottom: 15px;
+    }
+
+    button {
+      padding: 8px;
+      margin-bottom: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 30%;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 25%;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 30%;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 15%;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <button id="run">Check</button>
+    <button id="cancel">Cancel</button>
+    <div id="error"></div>
+    <div id="summary"></div>
+    <div id="list">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>(X,Y)</th>
+            <th>Parent</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('run').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'run' } }, '*');
+    };
+
+    document.getElementById('cancel').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg.type === 'result') {
+        document.getElementById('error').innerText = '';
+        document.getElementById('summary').innerText = `Found ${msg.count} absolute-positioned elements`;
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+        msg.elements.forEach((el) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${el.name}</td>
+            <td>${el.type}</td>
+            <td>(${el.x},${el.y})</td>
+            <td>${el.parentName}</td>
+          `;
+          row.onclick = () => {
+            parent.postMessage({ pluginMessage: { type: 'select', id: el.id } }, '*');
+          };
+          tbody.appendChild(row);
+        });
+      } else if (msg.type === 'error') {
+        document.getElementById('error').innerText = msg.message;
+        document.getElementById('summary').innerText = '';
+        document.getElementById('table-body').innerHTML = '';
+      }
+    };
+  </script>
+</body>
+
+</html>
